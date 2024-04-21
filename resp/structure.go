@@ -11,7 +11,7 @@ import (
 // this file implements data structure for resp
 var (
 	CRLF = "\r\n"
-	NIL  = []byte("$-1\r\n")
+	NIL  = []byte("$-1\r\n") // Null arrays
 )
 
 type RedisData interface {
@@ -45,12 +45,14 @@ type PlainData struct {
 	data string
 }
 
+// 1. bulkData
 func MakeBulkData(data []byte) *BulkData {
 	return &BulkData{
 		data: data,
 	}
 }
 
+// $表示BulkData，后接len
 func (r *BulkData) ToBytes() []byte {
 	// return nil
 	if r.data == nil {
@@ -72,12 +74,14 @@ func (r *BulkData) String() string {
 	return string(r.data)
 }
 
+// 2. stringData
 func MakeStringData(data string) *StringData {
 	return &StringData{
 		data: data,
 	}
 }
 
+// +表示StringData
 func (r *StringData) ToBytes() []byte {
 	return []byte("+" + r.data + CRLF)
 }
@@ -93,12 +97,14 @@ func (r *StringData) String() string {
 	return r.data
 }
 
+// 3. IntData
 func MakeIntData(data int64) *IntData {
 	return &IntData{
 		data: data,
 	}
 }
 
+// :表示IntData
 func (r *IntData) ToBytes() []byte {
 	return []byte(":" + strconv.FormatInt(r.data, 10) + CRLF)
 }
@@ -115,6 +121,7 @@ func (r *IntData) String() string {
 	return strconv.FormatInt(r.data, 10)
 }
 
+// 4. ErrorData
 func MakeErrorData(data ...string) *ErrorData {
 	errMsg := ""
 	for _, s := range data {
@@ -133,11 +140,16 @@ func MakeWrongNumberArgs(name string) *ErrorData {
 	return &ErrorData{data: fmt.Sprintf("ERR wrong number of arguments for '%s' command", name)}
 }
 
+// -表示ErrorData
 func (r *ErrorData) ToBytes() []byte {
 	return []byte("-" + r.data + CRLF)
 }
 
 func (r *ErrorData) Error() string {
+	return r.data
+}
+
+func (r *ErrorData) Data() string {
 	return r.data
 }
 
@@ -149,6 +161,7 @@ func (r *ErrorData) String() string {
 	return r.data
 }
 
+// 5.ArrayData
 func MakeArrayData(data []RedisData) *ArrayData {
 	return &ArrayData{
 		data: data,
@@ -161,6 +174,7 @@ func MakeEmptyArrayData() *ArrayData {
 	}
 }
 
+// *表示ArrayData
 func (r *ArrayData) ToBytes() []byte {
 	if r.data == nil {
 		return []byte("*-1\r\n")

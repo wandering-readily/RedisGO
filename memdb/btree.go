@@ -108,27 +108,34 @@ func insert[T Val](n *Node[T], target T, added *bool, tree *Btree[T]) *Node[T] {
 		return n
 	}
 
-	n.height = n.maxHeight() + 1
-	c = balance(n)
-
-	if c > 1 {
-		c = n.Value.Comp(target)
-		if c > 0 {
-			return n.rotateRight()
-		} else if c < 0 {
-			n.left = n.left.rotateLeft()
-			return n.rotateRight()
-		}
-	} else if c < -1 {
-		c = n.Value.Comp(target)
-		if c < 0 {
-			return n.rotateLeft()
-		} else if c > 0 {
-			n.right = n.right.rotateRight()
-			return n.rotateLeft()
-		}
-	}
+	n = rebalance(n)
 	return n
+
+	// n.height = n.maxHeight() + 1
+	// c = balance(n)
+
+	// if c > 1 {
+	// // ???
+	// // 这里不是n.Left?
+	// c = n.Value.Comp(target)
+	// if c > 0 {
+	// return n.rotateRight()
+	// } else if c < 0 {
+	// n.left = n.left.rotateLeft()
+	// return n.rotateRight()
+	// }
+	// } else if c < -1 {
+	// // ???
+	// // 这里不是n.Right?
+	// c = n.Value.Comp(target)
+	// if c < 0 {
+	// return n.rotateLeft()
+	// } else if c > 0 {
+	// n.right = n.right.rotateRight()
+	// return n.rotateLeft()
+	// }
+	// }
+	// return n
 }
 
 // InsertAll inserts all the values into the tree and returns the tree pointer

@@ -57,6 +57,8 @@ func parse(ctx context.Context, reader io.Reader, ch chan<- *ParsedRes) {
 	bufReader := bufio.NewReaderSize(reader, 4096) // 4096 is the default bufio buffer size, might change to a smaller number by configuration
 	state := new(readState)
 	for {
+
+		// 1. 先读取片头信息
 		// continuously read until client sent EOF to disconnect
 		var res RedisData
 		var err error
@@ -87,6 +89,8 @@ func parse(ctx context.Context, reader io.Reader, ch chan<- *ParsedRes) {
 			}
 			continue
 		}
+
+		// 2. 分析信息
 		// parse the read messages
 		// if msg is an array or a bulk string, then parse their header first.
 		// if msg is a normal line, parse it directly.
@@ -119,6 +123,7 @@ func parse(ctx context.Context, reader io.Reader, ch chan<- *ParsedRes) {
 				}
 				// continue to read the array elements
 				continue
+
 			// Bulk Strings
 			case '$':
 				// modify state.bulkLen and state.multiline
@@ -135,9 +140,11 @@ func parse(ctx context.Context, reader io.Reader, ch chan<- *ParsedRes) {
 						state.multiLine = false
 						state.bulkLen = 0
 						res = MakeBulkData(nil)
+						// 如果bulkData在array中，那么要放置在array中
 						// nil as array element
 						if state.inArray {
 							state.arrayData.data = append(state.arrayData.data, res)
+							// array填充完毕后
 							if len(state.arrayData.data) == state.arrayLen {
 								ch <- &ParsedRes{
 									Data: state.arrayData,

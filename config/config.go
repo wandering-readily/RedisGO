@@ -54,6 +54,7 @@ func (cErr *CfgError) Error() string {
 	return cErr.message
 }
 
+// 初始化flag参数
 func flagInit(cfg *Config) {
 	flag.StringVar(&(cfg.ConfFile), "config", configFile, "Appoint a config file: such as /etc/redis.conf")
 	flag.StringVar(&(cfg.Host), "host", defaultHost, "Bind host ip: default is 127.0.0.1")
@@ -91,9 +92,13 @@ func Setup() (*Config, error) {
 		KVPort:            0,
 		JoinCluster:       false,
 	}
+
+	// 使用参数
 	flagInit(cfg)
 	// parse command line flags
 	flag.Parse()
+
+	// 也就是Config File在本地或ip地址取
 	// parse config file & checks
 	if cfg.ConfFile != "" {
 		if err := cfg.Parse(cfg.ConfFile); err != nil {
@@ -113,6 +118,7 @@ func Setup() (*Config, error) {
 			return nil, portErr
 		}
 	}
+
 	// cluster mode
 	if cfg.IsCluster {
 		if cfg.ClusterConfigPath == "" {
@@ -123,6 +129,7 @@ func Setup() (*Config, error) {
 			return nil, err
 		}
 	}
+
 	Configures = cfg
 	return cfg, nil
 }

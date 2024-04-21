@@ -3,12 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/innovationb1ue/RedisGO/config"
-	"github.com/innovationb1ue/RedisGO/logger"
-	"github.com/innovationb1ue/RedisGO/raftexample"
-	"github.com/innovationb1ue/RedisGO/resp"
-	"go.etcd.io/etcd/raft/v3/raftpb"
-	"go.etcd.io/etcd/server/v3/etcdserver/api/snap"
 	"log"
 	"net"
 	"os"
@@ -17,6 +11,13 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+
+	"github.com/innovationb1ue/RedisGO/config"
+	"github.com/innovationb1ue/RedisGO/logger"
+	"github.com/innovationb1ue/RedisGO/raftexample"
+	"github.com/innovationb1ue/RedisGO/resp"
+	"go.etcd.io/etcd/raft/v3/raftpb"
+	"go.etcd.io/etcd/server/v3/etcdserver/api/snap"
 )
 
 // Start starts a redis server and raft layer if in cluster mode
@@ -55,6 +56,7 @@ func Start(cfg *config.Config) error {
 	clients := make(chan net.Conn)
 	// create n db for SELECT cmd
 	mgr := NewManager(cfg)
+	var handler Handler
 
 	// spawn a worker to accept tcp connections & create client objects
 	go func() {
@@ -99,7 +101,13 @@ func Start(cfg *config.Config) error {
 		// build cluster command filter
 		clusterFilter = newMiddleware()
 		clusterFilter.Add(ClusterCmdFilter)
+
+		handler = NewClusterHandler(mgr, proposeC, confChangeC, resultCallback, clusterFilter)
+	} else {
+		handler = NewSimpleHandler(mgr)
 	}
+
+	// spawn a worker to accept tcp connections & create client objects
 
 	// server event loop
 	for {
@@ -113,12 +121,7 @@ func Start(cfg *config.Config) error {
 			// start the worker goroutine
 			go func() {
 				defer wg.Done()
-				// decide the right handler to process command
-				if cfg.IsCluster {
-					mgr.HandleCluster(ctx, conn, proposeC, confChangeC, resultCallback, clusterFilter)
-				} else {
-					mgr.Handle(ctx, conn)
-				}
+				handler.Handle(ctx, conn)
 			}()
 			wg.Add(1)
 		// exit server

@@ -47,7 +47,8 @@ func (m *middleware) Filter(cmd [][]byte) ([][]byte, error) {
 // ***********************************
 // possibly write global filters below
 
-var Filters = []func(cmd [][]byte) ([][]byte, error){ClusterCmdFilter}
+// 过滤不支持的cmd
+var Filters = []func([][]byte) ([][]byte, error){ClusterCmdFilter}
 
 func ClusterCmdFilter(cmd [][]byte) ([][]byte, error) {
 	command := strings.ToLower(string(cmd[0]))

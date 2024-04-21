@@ -57,7 +57,7 @@ func (m *ConcurrentMap) Set(key string, value any) int {
 	defer shard.rwMu.Unlock()
 
 	if _, ok := shard.item[key]; !ok {
-		m.count++
+		atomic.AddInt64(&m.count, 1)
 		added = 1
 	}
 	shard.item[key] = value
@@ -84,7 +84,7 @@ func (m *ConcurrentMap) SetIfNotExist(key string, value any) int {
 	defer shard.rwMu.Unlock()
 
 	if _, ok := shard.item[key]; !ok {
-		m.count++
+		atomic.AddInt64(&m.count, 1)
 		shard.item[key] = value
 		return 1
 	}
@@ -111,7 +111,7 @@ func (m *ConcurrentMap) Delete(key string) int {
 
 	if _, ok := shard.item[key]; ok {
 		delete(shard.item, key)
-		m.count--
+		atomic.AddInt64(&m.count, -1)
 		return 1
 	} else {
 		return 0
@@ -126,12 +126,14 @@ func (m *ConcurrentMap) Clear() {
 	*m = *NewConcurrentMap(m.size)
 }
 
+// 是否应该使用全局锁
 // Keys return all stored keys in the concurrent map
 func (m *ConcurrentMap) Keys() []string {
-	keys := make([]string, m.count)
+	keys := make([]string, 0)
 	i := 0
 	for _, shard := range m.table {
 		shard.rwMu.RLock()
+		keys = append(keys, make([]string, len(shard.item))...)
 		for key := range shard.item {
 			keys[i] = key
 			i++

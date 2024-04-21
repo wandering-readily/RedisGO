@@ -76,6 +76,7 @@ func (l *Locks) sortedLockPoses(keys []string) []int {
 		poses[i] = pos
 		i++
 	}
+	// 排序，防止死锁
 	sort.Ints(poses)
 	return poses
 }

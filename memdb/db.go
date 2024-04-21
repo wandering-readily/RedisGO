@@ -3,11 +3,12 @@ package memdb
 import (
 	"context"
 	"encoding/json"
-	"github.com/innovationb1ue/RedisGO/raftexample"
 	"log"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/innovationb1ue/RedisGO/raftexample"
 
 	"github.com/innovationb1ue/RedisGO/config"
 	"github.com/innovationb1ue/RedisGO/logger"
@@ -20,9 +21,9 @@ import (
 // locks is used to lock a key for db to ensure some atomic operations
 // SubChans are an independent concurrent map of channel shards used in PUB/SUB commands
 type MemDb struct {
-	db       *ConcurrentMap
+	db       *ConcurrentMap	// ConcurrentMap锁 锁住取改key value过程
 	ttlKeys  *ConcurrentMap
-	locks    *Locks
+	locks    *Locks // 锁住 value any操作过程
 	SubChans *ChanMap
 	Raft     *raftexample.RaftNode
 }
